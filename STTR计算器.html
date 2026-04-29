@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>STTR (标准类符形符比) 专属计算器</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7fa; color: #333; max-width: 800px; margin: 40px auto; padding: 20px; }
+    .container { background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #2c3e50; }
+    label { font-weight: bold; margin-top: 15px; display: block; }
+    textarea { width: 100%; height: 200px; margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; box-sizing: border-box; }
+    input[type="number"] { width: 100px; padding: 8px; margin-top: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+    button { background-color: #3498db; color: white; border: none; padding: 12px 20px; margin-top: 20px; font-size: 16px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+    button:hover { background-color: #2980b9; }
+    .result { margin-top: 30px; padding: 20px; background-color: #e8f4f8; border-radius: 5px; border-left: 5px solid #3498db; }
+    .result p { font-size: 16px; margin: 10px 0; }
+    .highlight { font-weight: bold; color: #e74c3c; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>STTR 标准类符形符比计算器</h1>
+    
+    <label for="inputText">输入文本 (请确保中文已经过分词，且词与词之间有空格)：</label>
+    <textarea id="inputText" placeholder="请将您分词后的 .txt 文件内容粘贴在这里..."></textarea>
+    
+    <label for="chunkSize">STTR 分块基准字数 (Chunk Size)：</label>
+    <input type="number" id="chunkSize" value="1000" min="100">
+    
+    <button onclick="calculateSTTR()">一键计算 STTR</button>
+    
+    <div id="resultBox" class="result" style="display: none;">
+        <p>📊 <b>总形符数 (Tokens)：</b> <span id="resTokens">0</span></p>
+        <p>📚 <b>总类符数 (Types)：</b> <span id="resTypes">0</span></p>
+        <p>⚖️ <b>整体类符形符比 (整体 TTR)：</b> <span id="resTTR">0</span>%</p>
+        <p>🎯 <b>标准类符形符比 (STTR)：</b> <span id="resSTTR" class="highlight">0</span><span class="highlight">%</span></p>
+    </div>
+</div>
+
+<script>
+function calculateSTTR() {
+    const text = document.getElementById("inputText").value.trim();
+    const chunkSize = parseInt(document.getElementById("chunkSize").value, 10);
+    
+    if (!text) {
+        alert("请输入文本内容！");
+        return;
+    }
+    
+    // 分词处理（按空格切分并过滤空字符串）
+    const tokensArray = text.split(/\s+/).filter(word => word.length > 0);
+    const totalTokens = tokensArray.length;
+    
+    if (totalTokens === 0) {
+        alert("未能识别到有效的词汇，请确认文本是否已正确分词！");
+        return;
+    }
+    
+    // 计算总体 Types
+    const uniqueTypes = new Set(tokensArray);
+    const totalTypes = uniqueTypes.size;
+    
+    // 计算整体 TTR
+    const overallTTR = (totalTypes / totalTokens) * 100;
+    
+    // 计算 STTR
+    let chunkTTRSum = 0;
+    let validChunks = 0;
+    
+    if (totalTokens < chunkSize) {
+        // 如果文本总词数小于分块基准，则 STTR 等于整体 TTR
+        chunkTTRSum = overallTTR;
+        validChunks = 1;
+    } else {
+        // 按照基准块进行切分并计算局部 TTR
+        for (let i = 0; i <= totalTokens - chunkSize; i += chunkSize) {
+            const chunk = tokensArray.slice(i, i + chunkSize);
+            const chunkTypes = new Set(chunk).size;
+            chunkTTRSum += (chunkTypes / chunkSize) * 100;
+            validChunks++;
+        }
+    }
+    
+    const finalSTTR = chunkTTRSum / validChunks;
+    
+    // 渲染数据
+    document.getElementById("resTokens").innerText = totalTokens;
+    document.getElementById("resTypes").innerText = totalTypes;
+    document.getElementById("resTTR").innerText = overallTTR.toFixed(2);
+    document.getElementById("resSTTR").innerText = finalSTTR.toFixed(2);
+    
+    document.getElementById("resultBox").style.display = "block";
+}
+</script>
+
+</body>
+</html>
